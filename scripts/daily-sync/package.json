@@ -1,0 +1,19 @@
+{
+  "name": "daily-sync",
+  "version": "1.0.0",
+  "description": "Daily sync job for refreshing odds and results",
+  "type": "module",
+  "main": "index.ts",
+  "scripts": {
+    "start": "tsx index.ts"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "^2.39.0",
+    "sports-odds-api": "^1.2.1"
+  },
+  "devDependencies": {
+    "@types/node": "^20",
+    "tsx": "^4.20.6",
+    "typescript": "^5"
+  }
+}

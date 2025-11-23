@@ -4,7 +4,6 @@ on:
   schedule:
     # Run daily at 8:00 UTC, midnight PST, 1:00 PDT
     - cron: "5 8 * * *"
-    - cron: "15 3 * * *"
   workflow_dispatch: # Allow manual runs
 
 jobs:

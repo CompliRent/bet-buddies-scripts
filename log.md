@@ -13,8 +13,8 @@
 |Date | What | Hours|
 |---|---|---|
 |11/4/25 | Initial design    | 1.5
-|11/4/25 | Landing page      | 1.5
-|11/4/25 | Authentication    | 2
-|11/4/25 | Database Creation | 2
-|11/4/25 | Oauth             | 1.5
-|11/4/25 | League Creation   | 2
+|11/8/25 | Landing page      | 1.5
+|11/10/25 | Authentication    | 2
+|11/17/25 | Database Creation | 2
+|11/20/25 | Oauth             | 1.5
+|11/23/25 | League Creation   | 2

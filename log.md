@@ -19,3 +19,4 @@
 |11/17/25 | Database Creation | 2
 |11/20/25 | Oauth             | 1.5
 |11/23/25 | League Creation   | 2
+|12/2/25  | Make bets         | 3

@@ -5,7 +5,8 @@
   "type": "module",
   "main": "index.ts",
   "scripts": {
-    "start": "tsx index.ts"
+    "start": "tsx index.ts",
+    "test": "tsx date-utils.test.ts"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.39.0",

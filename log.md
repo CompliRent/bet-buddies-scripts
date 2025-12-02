@@ -6,6 +6,7 @@
 |11/11/25 | Finishing API services | 1.5
 |11/20/25 | Planning new architecture | 1.5
 |11/22/25 | Create new server sync script | 3
+|11/26/25 | Fix sync script timing | 2
 
 <br/>
 

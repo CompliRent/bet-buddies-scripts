@@ -9,13 +9,12 @@
 import { createClient } from "@supabase/supabase-js";
 import SportsGameOdds from "sports-odds-api";
 import { Event } from "sports-odds-api/resources/events";
+import { get24HoursFromDate, getEndOfCurrentNFLWeek } from "./date-utils";
 
 type Scores = {
   homeScore: number;
   awayScore: number;
 };
-
-const DAY_IN_MS = 24 * 60 * 60 * 1000;
 
 // Environment variables
 const SUPABASE_URL = process.env.SUPABASE_URL;
@@ -37,52 +36,6 @@ const sportsClient = new SportsGameOdds({
 });
 
 /**
- * Get 24 hours from now in ISO 8601 format
- */
-function get24HoursFromDate(date: Date = new Date()): string {
-  const tomorrow = new Date(date.getTime() + DAY_IN_MS);
-  return tomorrow.toISOString();
-}
-
-/**
- * Get the following Wednesday at 8 AM UTC in ISO 8601 format
- * If today is Wednesday before 8 AM, returns today at 8 AM
- * Otherwise returns the next Wednesday at 8 AM
- */
-function getFollowingWednesday8AM(date: Date = new Date()): string {
-  const currentDay = date.getUTCDay(); // 0 = Sunday, 1 = Monday, ..., 6 = Saturday
-
-  // Calculate days until next Wednesday at 8 AM
-  // Wednesday is day 3 (0-indexed)
-  let daysUntilWednesday: number;
-
-  if (currentDay < 3) {
-    // Before Wednesday, get this week's Wednesday
-    daysUntilWednesday = 3 - currentDay;
-  } else {
-    // Wednesday 8 AM or later, or after Wednesday - get next week's Wednesday
-    // Formula: (7 - currentDay) + 3
-    // Example: Thursday (4) -> (7-4)+3 = 6 days to next Wednesday
-    daysUntilWednesday = 7 - currentDay + 3;
-  }
-
-  // Create date for Wednesday at 8 AM UTC
-  const wednesday = new Date(
-    Date.UTC(
-      date.getUTCFullYear(),
-      date.getUTCMonth(),
-      date.getUTCDate() + daysUntilWednesday,
-      8, // 8 AM
-      0, // 0 minutes
-      0, // 0 seconds
-      0 // 0 milliseconds
-    )
-  );
-
-  return wednesday.toISOString();
-}
-
-/**
  * Fetch upcoming events from Sports Odds API
  * Only returns events that don't start today
  */
@@ -91,7 +44,7 @@ async function fetchUpcomingEvents(): Promise<Event[]> {
 
   try {
     const startsAfter = get24HoursFromDate();
-    const startsBefore = getFollowingWednesday8AM();
+    const startsBefore = getEndOfCurrentNFLWeek();
 
     console.log(`Fetching events from ${startsAfter} to ${startsBefore}`);
 

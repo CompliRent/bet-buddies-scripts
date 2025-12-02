@@ -12,4 +12,9 @@
 # Josh's Hours
 |Date | What | Hours|
 |---|---|---|
-|11/4/25 | Initial design | 1.5
+|11/4/25 | Initial design    | 1.5
+|11/4/25 | Landing page      | 1.5
+|11/4/25 | Authentication    | 2
+|11/4/25 | Database Creation | 2
+|11/4/25 | Oauth             | 1.5
+|11/4/25 | League Creation   | 2

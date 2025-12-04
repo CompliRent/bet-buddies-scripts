@@ -118,14 +118,6 @@ async function syncUpcomingEvents(): Promise<void> {
   console.log("\nStarting sync of upcoming_events...");
 
   try {
-    // Fetch upcoming events
-    const events = await fetchUpcomingEvents();
-
-    if (events.length === 0) {
-      console.log("No upcoming events found, skipping sync");
-      return;
-    }
-
     // Clear existing table
     console.log("Clearing existing upcoming_events...");
     const { error: deleteError } = await supabase.from("upcoming_events").delete().neq("event_id", ""); // Delete all rows
@@ -134,6 +126,14 @@ async function syncUpcomingEvents(): Promise<void> {
       throw new Error(`Failed to clear upcoming_events: ${deleteError.message}`);
     }
     console.log("Cleared upcoming_events table");
+
+    // Fetch upcoming events
+    const events = await fetchUpcomingEvents();
+
+    if (events.length === 0) {
+      console.log("No upcoming events found, skipping sync");
+      return;
+    }
 
     // Transform and insert new events
     const rows = events.map(transformEventToRow).filter((event) => !!event);

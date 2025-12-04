@@ -7,6 +7,8 @@
 |11/20/25 | Planning new architecture | 1.5
 |11/22/25 | Create new server sync script | 3
 |11/26/25 | Fix sync script timing | 2
+|12/2/25 | Support making bets | 3
+|
 
 <br/>
 

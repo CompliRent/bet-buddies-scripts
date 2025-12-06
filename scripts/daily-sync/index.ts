@@ -10,6 +10,8 @@ import { createClient } from "@supabase/supabase-js";
 import SportsGameOdds from "sports-odds-api";
 import { Event } from "sports-odds-api/resources/events";
 import { get24HoursFromDate, getEndOfCurrentNFLWeek } from "./date-utils";
+import dotenv from "dotenv";
+dotenv.config();
 
 type Scores = {
   homeScore: number;
@@ -49,10 +51,12 @@ async function fetchUpcomingEvents(): Promise<Event[]> {
     console.log(`Fetching events from ${startsAfter} to ${startsBefore}`);
 
     // Fetch events with a higher limit to get more data
+    // Request moneyline, spread, and over/under odds
     const response = await sportsClient.events.get({
       leagueID: "NFL",
       oddsAvailable: true,
-      oddID: "points-home-game-ml-home,points-away-game-ml-away",
+      oddID:
+        "points-home-game-ml-home,points-away-game-ml-away,points-home-game-sp-home,points-away-game-sp-away,points-all-game-ou-over,points-all-game-ou-under",
       startsAfter,
       startsBefore,
       limit: 100,
@@ -79,19 +83,54 @@ function transformEventToRow(event: Event):
       start_date: string;
       home_moneyline: number | null;
       away_moneyline: number | null;
+      home_spread_value: number | null;
+      home_spread_odds: number | null;
+      away_spread_odds: number | null;
+      ou_value: number | null;
+      ou_over_odds: number | null;
+      ou_under_odds: number | null;
     }
   | undefined {
   // Extract moneyline odds
   let homeMoneyline: number | null = null;
   let awayMoneyline: number | null = null;
 
+  // Extract spread odds
+  let homeSpreadValue: number | null = null;
+  let homeSpreadOdds: number | null = null;
+  let awaySpreadOdds: number | null = null;
+
+  // Extract over/under odds
+  let ouValue: number | null = null;
+  let ouOverOdds: number | null = null;
+  let ouUnderOdds: number | null = null;
+
   if (event.odds && typeof event.odds === "object") {
     for (const [oddID, odd] of Object.entries(event.odds)) {
+      // Moneyline odds
       if (oddID === "points-home-game-ml-home" && odd.bookOdds) {
         homeMoneyline = Number(odd.bookOdds);
       }
       if (oddID === "points-away-game-ml-away" && odd.bookOdds) {
         awayMoneyline = Number(odd.bookOdds);
+      }
+
+      // Spread odds
+      if (oddID === "points-home-game-sp-home" && odd.bookOdds) {
+        homeSpreadOdds = Number(odd.bookOdds);
+        homeSpreadValue = Number(odd.bookSpread);
+      }
+      if (oddID === "points-away-game-sp-away" && odd.bookOdds) {
+        awaySpreadOdds = Number(odd.bookOdds);
+      }
+
+      // Over/under odds
+      if (oddID === "points-all-game-ou-over" && odd.bookOdds) {
+        ouOverOdds = Number(odd.bookOdds);
+        ouValue = Number(odd.bookOverUnder);
+      }
+      if (oddID === "points-all-game-ou-under" && odd.bookOdds) {
+        ouUnderOdds = Number(odd.bookOdds);
       }
     }
   }
@@ -103,6 +142,12 @@ function transformEventToRow(event: Event):
     start_date: event.status?.startsAt!,
     home_moneyline: homeMoneyline,
     away_moneyline: awayMoneyline,
+    home_spread_value: homeSpreadValue,
+    home_spread_odds: homeSpreadOdds,
+    away_spread_odds: awaySpreadOdds,
+    ou_value: ouValue,
+    ou_over_odds: ouOverOdds,
+    ou_under_odds: ouUnderOdds,
   };
 
   // only return if all values are defined
@@ -203,25 +248,75 @@ async function fetchEventResults(eventIds: string[]): Promise<Map<string, Scores
 }
 
 /**
- * Determine if a bet won based on selected team and scores
+ * Determine if a bet won based on bet type, selection, and scores
+ * Treats pushes (ties) as losses
  */
 function calculateBetResult(
-  selectedTeamId: string,
+  betType: string,
+  selection: string,
   homeTeamId: string,
   awayTeamId: string,
   homeScore: number,
-  awayScore: number
+  awayScore: number,
+  spreadValue: number | null,
+  totalValue: number | null
 ): boolean | null {
-  const selectedHome = selectedTeamId === homeTeamId;
-  const selectedAway = selectedTeamId === awayTeamId;
+  if (betType === "moneyline") {
+    const selectedHome = selection === homeTeamId;
+    const selectedAway = selection === awayTeamId;
 
-  if (selectedHome) {
-    return homeScore > awayScore;
-  } else if (selectedAway) {
-    return awayScore > homeScore;
+    if (selectedHome) {
+      return homeScore > awayScore;
+    } else if (selectedAway) {
+      return awayScore > homeScore;
+    }
+
+    return null; // Invalid team selection
+  } else if (betType === "spread") {
+    if (!spreadValue) {
+      return null; // Missing spread value
+    }
+
+    const selectedHome = selection === homeTeamId;
+    const selectedAway = selection === awayTeamId;
+
+    if (selectedHome) {
+      // Home team bet: apply spread to home score
+      // If spreadValue is -3, home needs to win by more than 3
+      // homeScore + spreadValue > awayScore
+      const homeScoreWithSpread = homeScore + spreadValue;
+      // If homeScoreWithSpread > awayScore, bet wins
+      // If equal, it's a push (treated as loss)
+      return homeScoreWithSpread > awayScore;
+    } else if (selectedAway) {
+      const awayScoreWithSpread = awayScore - spreadValue;
+      // If awayScoreWithSpread > homeScore, bet wins
+      // If equal, it's a push (treated as loss)
+      return awayScoreWithSpread > homeScore;
+    }
+
+    return null; // Invalid team selection
+  } else if (betType === "over_under") {
+    if (!totalValue) {
+      return null; // Missing total value
+    }
+
+    const totalScore = homeScore + awayScore;
+    const selectedOver = selection === "over";
+    const selectedUnder = selection === "under";
+
+    if (selectedOver) {
+      // Over wins if total > totalValue, loses if equal (push) or less
+      return totalScore > totalValue;
+    } else if (selectedUnder) {
+      // Under wins if total < totalValue, loses if equal (push) or more
+      return totalScore < totalValue;
+    }
+
+    return null; // Invalid selection (should be "over" or "under")
   }
 
-  return null; // Invalid team selection
+  return null; // Unknown bet type
 }
 
 /**
@@ -262,11 +357,14 @@ async function syncEventResults(): Promise<void> {
       }
 
       const betResult = calculateBetResult(
-        bet.selected_team_id,
+        bet.bet_type,
+        bet.selection,
         bet.home_team_id,
         bet.away_team_id,
         result.homeScore,
-        result.awayScore
+        result.awayScore,
+        bet.spread_value,
+        bet.total_value
       );
 
       if (betResult === null) {

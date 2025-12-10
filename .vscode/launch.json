@@ -1,0 +1,24 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Debug Daily Sync",
+      "type": "node",
+      "request": "launch",
+      "runtimeExecutable": "${workspaceFolder}/scripts/daily-sync/node_modules/.bin/tsx",
+      "args": ["${workspaceFolder}/scripts/daily-sync/index.ts"],
+      "cwd": "${workspaceFolder}/scripts/daily-sync",
+      "env": {
+        "NODE_ENV": "development",
+        "NODE_OPTIONS": "--enable-source-maps"
+      },
+      "console": "integratedTerminal",
+      "internalConsoleOptions": "neverOpen",
+      "skipFiles": ["<node_internals>/**"],
+      "sourceMaps": true,
+      "resolveSourceMapLocations": ["${workspaceFolder}/**", "!**/node_modules/**"],
+      "outputCapture": "std",
+      "smartStep": true
+    }
+  ]
+}

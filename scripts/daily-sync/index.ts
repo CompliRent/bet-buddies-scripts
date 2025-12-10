@@ -231,7 +231,8 @@ async function fetchEventResults(eventIds: string[]): Promise<Map<string, Scores
       const awayScore = event?.teams?.away?.score;
       const ended = event.status?.ended ?? false;
 
-      if (!!homeScore && !!awayScore && ended) {
+      // can't use !! because 0 is a valid score
+      if (homeScore != null && awayScore != null && ended) {
         results.set(event.eventID, {
           homeScore,
           awayScore,
